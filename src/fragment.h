@@ -7,6 +7,6 @@ struct Vertex {
 };
 
 struct Fragment {
-    glm::ivec2 position;
+    glm::vec3 position;
     Color color;
 };

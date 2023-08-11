@@ -2,35 +2,19 @@
 #include <glm/glm.hpp>
 #include "fragment.h"
 
+glm::vec3 barycentricCoordinates(const glm::vec3& P, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C) {
+    float w = ((B.y - C.y)*(P.x - C.x) + (C.x - B.x)*(P.y - C.y)) /
+              ((B.y - C.y)*(A.x - C.x) + (C.x - B.x)*(A.y - C.y));
 
-std::vector<Fragment> line(Vertex A, Vertex B) {
-    int x1 = A.position.x;
-    int y1 = A.position.y;
-    int x2 = B.position.x;
-    int y2 = B.position.y;
-    int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
-    int dy = -abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
-    int err = dx + dy, e2; /* error value e_xy */
+    float v = ((C.y - A.y)*(P.x - C.x) + (A.x - C.x)*(P.y - C.y)) /
+              ((B.y - C.y)*(A.x - C.x) + (C.x - B.x)*(A.y - C.y));
 
+    float u = 1.0f - w - v;
 
-    std::vector<Fragment> lineFragments;
-
-    while (true) { /* loop */
-        lineFragments.push_back(Fragment{glm::ivec2(x1, y1), A.color});
-        if (x1 == x2 && y1 == y2) break;
-        e2 = 2 * err;
-        if (e2 >= dy) { /* e_xy + e_x > 0 */
-            err += dy;
-            x1 += sx;
-        }
-        if (e2 <= dx) { /* e_xy + e_y < 0 */
-            err += dx;
-            y1 += sy;
-        }
-    }
-
-    return lineFragments;
+    return glm::vec3(w, v, u);
 }
+
+
 
 
 std::vector<Fragment> triangle(Vertex a, Vertex b, Vertex c) {
@@ -40,27 +24,34 @@ std::vector<Fragment> triangle(Vertex a, Vertex b, Vertex c) {
 
     std::vector<Fragment> triangleFragments;
 
-    std::vector<Fragment> line1 = line(a, b);
-    std::vector<Fragment> line2 = line(b, c);
-    std::vector<Fragment> line3 = line(c, a);
+    // build bounding box
 
-    triangleFragments.insert(
-            triangleFragments.end(),
-            line1.begin(),
-            line1.end()
-    );
+    float minX = std::min(std::min(A.x, B.x), C.x);
+    float minY = std::min(std::min(A.y, B.y), C.y);
+    float maxX = std::max(std::max(A.x, B.x), C.x);
+    float maxY = std::max(std::max(A.y, B.y), C.y);
 
-    triangleFragments.insert(
-            triangleFragments.end(),
-            line2.begin(),
-            line2.end()
-    );
+    for (float y = minY; y <= maxY; y++) {
+        for (float x = minX; x <= maxX; x++) {
+            glm::vec3 P = glm::vec3(x, y, 0);
 
-    triangleFragments.insert(
-            triangleFragments.end(),
-            line3.begin(),
-            line3.end()
-    );
+            glm::vec3 bar = barycentricCoordinates(P, A, B, C);
+
+            if (
+                    bar.x <= 1 && bar.x >= 0 &&
+                    bar.y <= 1 && bar.y >= 0 &&
+                    bar.z <= 1 && bar.z >= 0
+                    ) {
+                Color color = a.color * bar.x + b.color * bar.y + c.color * bar.z;
+
+                P.z = a.position.z * bar.x + b.position.z * bar.y + c.position.z * bar.z;
+
+                triangleFragments.push_back(
+                        Fragment{P, color}
+                );
+            }
+        }
+    }
 
     return triangleFragments;
 }

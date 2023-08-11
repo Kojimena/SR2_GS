@@ -9,11 +9,12 @@
 #include "shaders.h"
 #include "load.h"
 #include "triangle.h"
+#include <array>
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 800;
 
-
+std::array<std::array<float, WINDOW_WIDTH>, WINDOW_HEIGHT> zbuffer;
 SDL_Renderer* renderer;
 
 Uniform uniform;
@@ -29,12 +30,19 @@ Color currentColor = {255, 255, 255}; // Initially set to white
 void clear() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
+
+    for (auto &row : zbuffer) {
+        std::fill(row.begin(), row.end(), -99999.0f);
+    }
 }
 
 // Function to set a specific pixel in the framebuffer to the currentColor
-void point(int x, int y, Color color) {
-    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderDrawPoint(renderer, x, y);
+void point(Fragment f) {
+    if (f.position.z > zbuffer[f.position.y][f.position.x]) {
+        SDL_SetRenderDrawColor(renderer, f.color.r, f.color.g, f.color.b, f.color.a);
+        SDL_RenderDrawPoint(renderer, f.position.x, f.position.y);
+        zbuffer[f.position.y][f.position.x] = f.position.z;
+    }
 }
 
 std::vector<std::vector<Vertex>> primitiveAssembly(
@@ -97,17 +105,17 @@ void render(std::vector<glm::vec3> VBO) {
     // Fragments -> colors
 
     for (Fragment fragment : fragments) {
-        Color fragColor = fragmentShader(fragment);
-        point(fragment.position.x, fragment.position.y, fragColor);
+        point(fragmentShader(fragment));
     }
 }
 
 float a = 3.14f / 3.0f;
 glm::mat4 createModelMatrix() {
-    glm::mat4 transtation = glm::translate(glm::mat4(1), glm::vec3(0.9f, -0.5f, 0));
-    glm::mat4 rotation = glm::rotate(glm::mat4(1), glm::radians(a++), glm::vec3(0, 4, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.09f, 0.09f, 0.09f));
-    return transtation * scale * rotation;
+    glm::mat4 transtation = glm::translate(glm::mat4(1), glm::vec3(1.0f, -0.9f, 0));
+    glm::mat4 rotationy = glm::rotate(glm::mat4(1), glm::radians(a++), glm::vec3(0, 4, 0));
+    glm::mat4 rotationx = glm::rotate(glm::mat4(1), glm::radians(3.14f), glm::vec3(1, 0, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.1f, 0.09f, 0.09f));
+    return transtation * scale * rotationx * rotationy;
 }
 
 
