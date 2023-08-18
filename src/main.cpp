@@ -145,7 +145,7 @@ float b = 0.81f ;
 glm::mat4 createModelMatrix() {
     glm::mat4 transtation = glm::translate(glm::mat4(1), glm::vec3(0.2f, -0.09f, 0));
     glm::mat4 rotationy = glm::rotate(glm::mat4(1), glm::radians(a++), glm::vec3(0, 4, 0));
-    glm::mat4 rotationx = glm::rotate(glm::mat4(1), glm::radians(b++), glm::vec3(1, 0, 0));
+    glm::mat4 rotationx = glm::rotate(glm::mat4(1), glm::radians(b+=0.1f), glm::vec3(1, 0, 0));
     glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.15f, 0.15f, 0.15f));
     return transtation * scale * rotationx * rotationy;
 }
