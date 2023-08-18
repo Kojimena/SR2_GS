@@ -14,8 +14,8 @@
 #include "shaders.h"
 #include "triangle.h"
 
-const int WINDOW_WIDTH = 600;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_WIDTH = 700;
+const int WINDOW_HEIGHT = 700;
 
 std::array<std::array<float, WINDOW_WIDTH>, WINDOW_HEIGHT> zbuffer;
 
@@ -31,10 +31,6 @@ std::string getCurrentPath() {
     return std::filesystem::current_path().string();
 }
 
-std::string getParentDirectory(const std::string& path) {
-    std::filesystem::path filePath(path);
-    return filePath.parent_path().string();
-}
 
 std::vector<glm::vec3> vertices;
 std::vector<Face> faces;
@@ -145,11 +141,12 @@ void render(std::vector<glm::vec3> VBO) {
 
 
 float a = 3.14f / 3.0f;
+float b = 0.81f ;
 glm::mat4 createModelMatrix() {
     glm::mat4 transtation = glm::translate(glm::mat4(1), glm::vec3(0.2f, -0.09f, 0));
     glm::mat4 rotationy = glm::rotate(glm::mat4(1), glm::radians(a++), glm::vec3(0, 4, 0));
-    glm::mat4 rotationx = glm::rotate(glm::mat4(1), glm::radians(3.14f), glm::vec3(1, 0, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.1f, 0.1f, 0.1f));
+    glm::mat4 rotationx = glm::rotate(glm::mat4(1), glm::radians(b++), glm::vec3(1, 0, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.15f, 0.15f, 0.15f));
     return transtation * scale * rotationx * rotationy;
 }
 
@@ -246,14 +243,6 @@ std::vector<glm::vec3> setupVertexArray(const std::vector<glm::vec3>& vertices, 
         }
     }
 
-    /*
-     * // imprimir el vertex array
-    std::cout << "Vertex array:" << std::endl;
-    for (const auto& vertex : vertexArray) {
-        std::cout << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
-    }
-     */
-
     return vertexArray;
 }
 
@@ -268,18 +257,6 @@ int main(int argc, char** argv) {
 
     loadOBJ(filePath, vertices, faces);
 
-    /*std::cout << "Vertices:" << std::endl;
-    for (const auto& vertex : vertices) {
-        std::cout << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
-    }
-
-    std::cout << "Faces:" << std::endl;
-    for (const auto& face : faces) {
-        for (const auto& vertexIndices : face.vertexIndices) {
-            std::cout << vertexIndices[0] << "/" << vertexIndices[1] << "/" << vertexIndices[2] << " ";
-        }
-        std::cout << std::endl;
-    }*/
 
     std::vector<glm::vec3> vertexArray = setupVertexArray(vertices, faces);
 

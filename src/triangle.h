@@ -4,6 +4,8 @@
 #include "glm/glm.hpp"
 #include "fragment.h"
 
+glm::vec3 light = normalize(glm::vec3(0.5, 0.5, 3));
+
 
 glm::vec3 barycentricCoordinates(const glm::vec3& P, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C) {
     float w = ((B.y - C.y)*(P.x - C.x) + (C.x - B.x)*(P.y - C.y)) /
@@ -29,6 +31,7 @@ std::vector<Fragment> triangle(Vertex a, Vertex b, Vertex c) {
     float minY = std::min(std::min(A.y, B.y), C.y);
     float maxX = std::max(std::max(A.x, B.x), C.x);
     float maxY = std::max(std::max(A.y, B.y), C.y);
+    glm::vec3 N = glm::normalize(glm::cross(B - A, C - A));
 
     for (float y = minY; y <= maxY; y++) {
         for (float x = minX; x <= maxX; x++) {
@@ -41,10 +44,11 @@ std::vector<Fragment> triangle(Vertex a, Vertex b, Vertex c) {
                     bar.y <= 1 && bar.y >= 0 &&
                     bar.z <= 1 && bar.z >= 0
                     ) {
-                Color color = a.color * bar.x + b.color * bar.y + c.color * bar.z;
+
 
                 P.z = a.position.z * bar.x + b.position.z * bar.y + c.position.z * bar.z;
-
+                float intensity = glm::dot(N, light) * 10;
+                Color color = Color(intensity * 255, intensity * 255, intensity * 255);
                 triangleFragments.push_back(
                         Fragment{P, color}
                 );
