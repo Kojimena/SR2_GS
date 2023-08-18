@@ -1,7 +1,8 @@
-#include <glm/glm.hpp>
+#include <SDL.h>
 #include <iostream>
 #include "fragment.h"
 #include "color.h"
+#include "glm/glm.hpp"
 
 
 // overload for Vertex

@@ -1,6 +1,9 @@
 #pragma once
-#include <glm/glm.hpp>
+#include <SDL.h>
+#include <vector>
+#include "glm/glm.hpp"
 #include "fragment.h"
+
 
 glm::vec3 barycentricCoordinates(const glm::vec3& P, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C) {
     float w = ((B.y - C.y)*(P.x - C.x) + (C.x - B.x)*(P.y - C.y)) /
@@ -15,16 +18,12 @@ glm::vec3 barycentricCoordinates(const glm::vec3& P, const glm::vec3& A, const g
 }
 
 
-
-
 std::vector<Fragment> triangle(Vertex a, Vertex b, Vertex c) {
     glm::vec3 A = a.position;
     glm::vec3 B = b.position;
     glm::vec3 C = c.position;
 
     std::vector<Fragment> triangleFragments;
-
-    // build bounding box
 
     float minX = std::min(std::min(A.x, B.x), C.x);
     float minY = std::min(std::min(A.y, B.y), C.y);

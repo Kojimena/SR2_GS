@@ -1,24 +1,43 @@
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <vector>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include <filesystem>
 #include "fragment.h"
 #include "uniform.h"
+#include <array>
+#include <fstream>
+#include <sstream>
+
 #include "print.h"
 #include "color.h"
 #include "shaders.h"
-#include "load.h"
 #include "triangle.h"
-#include <array>
 
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 800;
+const int WINDOW_WIDTH = 600;
+const int WINDOW_HEIGHT = 600;
 
 std::array<std::array<float, WINDOW_WIDTH>, WINDOW_HEIGHT> zbuffer;
+
 SDL_Renderer* renderer;
 
 Uniform uniform;
 
+struct Face {
+    std::vector<std::array<int, 3>> vertexIndices;
+};
+
+std::string getCurrentPath() {
+    return std::filesystem::current_path().string();
+}
+
+std::string getParentDirectory(const std::string& path) {
+    std::filesystem::path filePath(path);
+    return filePath.parent_path().string();
+}
+
+std::vector<glm::vec3> vertices;
+std::vector<Face> faces;
 
 // Declare a global clearColor of type Color
 Color clearColor = {0, 0, 0}; // Initially set to black
@@ -32,13 +51,13 @@ void clear() {
     SDL_RenderClear(renderer);
 
     for (auto &row : zbuffer) {
-        std::fill(row.begin(), row.end(), -99999.0f);
+        std::fill(row.begin(), row.end(), 99999.0f);
     }
 }
 
 // Function to set a specific pixel in the framebuffer to the currentColor
 void point(Fragment f) {
-    if (f.position.z > zbuffer[f.position.y][f.position.x]) {
+    if (f.position.y < WINDOW_HEIGHT && f.position.x < WINDOW_WIDTH && f.position.y > 0 && f.position.x > 0 && f.position.z < zbuffer[f.position.y][f.position.x]) {
         SDL_SetRenderDrawColor(renderer, f.color.r, f.color.g, f.color.b, f.color.a);
         SDL_RenderDrawPoint(renderer, f.position.x, f.position.y);
         zbuffer[f.position.y][f.position.x] = f.position.z;
@@ -69,37 +88,52 @@ void render(std::vector<glm::vec3> VBO) {
 
     std::vector<Vertex> transformedVertices;
 
-    for (int i = 0; i < VBO.size(); i+=2) {
+    for (int i = 0; i < VBO.size(); i++) {
         glm::vec3 v = VBO[i];
-        glm::vec3 c = VBO[i+1];
 
-        Vertex vertex = {v, Color(c.x, c.y, c.z)};
+        Vertex vertex = {v, Color(255, 255, 255)};
         Vertex transformedVertex = vertexShader(vertex, uniform);
         transformedVertices.push_back(transformedVertex);
     }
+
+    /*
+     // Imprimir los vertices transformados
+    for (Vertex v : transformedVertices) {
+        print(v.position);
+    }
+     */
 
 
     // 2. Primitive Assembly
     // transformedVertices -> triangles
     std::vector<std::vector<Vertex>> triangles = primitiveAssembly(transformedVertices);
 
+    /*
+     // Imprimir los triangulos
+    for (std::vector<Vertex> triangleVertices : triangles) {
+        for (Vertex v : triangleVertices) {
+            print(v.position);
+        }
+    }
+     */
+
     // 3. Rasterize
     // triangles -> Fragments
     std::vector<Fragment> fragments;
     for (const std::vector<Vertex>& triangleVertices : triangles) {
-
         std::vector<Fragment> rasterizedTriangle = triangle(
-            triangleVertices[0],
-            triangleVertices[1],
-            triangleVertices[2]
+                triangleVertices[0],
+                triangleVertices[1],
+                triangleVertices[2]
         );
-        
+
         fragments.insert(
-            fragments.end(),
-            rasterizedTriangle.begin(),
-            rasterizedTriangle.end()
+                fragments.end(),
+                rasterizedTriangle.begin(),
+                rasterizedTriangle.end()
         );
     }
+
 
     // 4. Fragment Shader
     // Fragments -> colors
@@ -109,27 +143,26 @@ void render(std::vector<glm::vec3> VBO) {
     }
 }
 
+
 float a = 3.14f / 3.0f;
 glm::mat4 createModelMatrix() {
-    glm::mat4 transtation = glm::translate(glm::mat4(1), glm::vec3(1.0f, -0.9f, 0));
+    glm::mat4 transtation = glm::translate(glm::mat4(1), glm::vec3(0.2f, -0.09f, 0));
     glm::mat4 rotationy = glm::rotate(glm::mat4(1), glm::radians(a++), glm::vec3(0, 4, 0));
     glm::mat4 rotationx = glm::rotate(glm::mat4(1), glm::radians(3.14f), glm::vec3(1, 0, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.1f, 0.09f, 0.09f));
+    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(0.1f, 0.1f, 0.1f));
     return transtation * scale * rotationx * rotationy;
 }
 
-
 glm::mat4 createViewMatrix() {
     return glm::lookAt(
-        // donde esta
-        glm::vec3(0, 0, -5),
-        // hacia adonde mira
-        glm::vec3(0, 0, 0),
-        // arriba
-        glm::vec3(0, 1, 0)
+            // donde esta
+            glm::vec3(0, 0, -5),
+            // hacia adonde mira
+            glm::vec3(0, 0, 0),
+            // arriba
+            glm::vec3(0, 1, 0)
     );
 }
-
 
 glm::mat4 createProjectionMatrix() {
     float fovInDegrees = 45.0f;
@@ -152,77 +185,124 @@ glm::mat4 createViewportMatrix() {
     return viewport;
 }
 
-std::vector<glm::vec3> setupVertexArray(const std::vector<glm::vec3>& vertices, const std::vector<Face>& faces)
-{
+// Función para leer el archivo .obj y cargar los vértices y caras
+bool loadOBJ(const std::string& path, std::vector<glm::vec3>& out_vertices, std::vector<Face>& out_faces) {
+    out_vertices.clear();
+    out_faces.clear();
+
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "Error: Unable to open file " << path << std::endl;
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::string type;
+        iss >> type;
+
+        if (type == "v") {
+            glm::vec3 vertex;
+            iss >> vertex.x >> vertex.y >> vertex.z;
+            out_vertices.push_back(vertex);
+        } else if (type == "f") {
+            std::string lineHeader;
+            Face face;
+            while (iss >> lineHeader)
+            {
+                std::istringstream tokenstream(lineHeader);
+                std::string token;
+                std::array<int, 3> vertexIndices;
+
+                // Read all three values separated by '/'
+                for (int i = 0; i < 3; ++i) {
+                    std::getline(tokenstream, token, '/');
+                    vertexIndices[i] = std::stoi(token) - 1;
+                }
+
+                face.vertexIndices.push_back(vertexIndices);
+            }
+            out_faces.push_back(face);
+        }
+    }
+
+    file.close();
+    return true;
+}
+
+std::vector<glm::vec3> setupVertexArray(const std::vector<glm::vec3>& vertices, const std::vector<Face>& faces) {
     std::vector<glm::vec3> vertexArray;
 
     // For each face
-    for (const auto& face : faces)
-    {
-        // Get the first vertex of the face
-        glm::vec3 firstVertex = vertices[face.vertexIndices[0] - 1]; // Subtract 1 from the index
+    for (const auto& face : faces) {
+        // For each vertex in the face
+        for (const auto& vertexIndices : face.vertexIndices) {
+            // Get the vertex position from the input array using the indices from the face
+            glm::vec3 vertexPosition = vertices[vertexIndices[0]];
 
-        // For each additional vertex in the face
-        for (size_t i = 2; i < face.vertexIndices.size(); ++i)
-        {
-            // Get the two vertices
-            glm::vec3 vertex1 = vertices[face.vertexIndices[i - 1] - 1]; // Subtract 1 from the index
-            glm::vec3 vertex2 = vertices[face.vertexIndices[i] - 1]; // Subtract 1 from the index
-
-            // Add the vertices to the vertex array
-            vertexArray.push_back(firstVertex);
-            vertexArray.push_back(vertex1);
-            vertexArray.push_back(vertex2);
+            // Add the vertex position to the vertex array
+            vertexArray.push_back(vertexPosition);
         }
     }
+
+    /*
+     * // imprimir el vertex array
+    std::cout << "Vertex array:" << std::endl;
+    for (const auto& vertex : vertexArray) {
+        std::cout << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
+    }
+     */
+
     return vertexArray;
 }
 
-
-
-int main() {
+int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_EVERYTHING);
 
-    SDL_Window* window = SDL_CreateWindow("life", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    SDL_Window* window = SDL_CreateWindow("life", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+    std::string currentPath = getCurrentPath();
+    std::string fileName = "/Users/jime/Downloads/navejime.obj";
+    std::string filePath = fileName;
+
+    loadOBJ(filePath, vertices, faces);
+
+    /*std::cout << "Vertices:" << std::endl;
+    for (const auto& vertex : vertices) {
+        std::cout << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
+    }
+
+    std::cout << "Faces:" << std::endl;
+    for (const auto& face : faces) {
+        for (const auto& vertexIndices : face.vertexIndices) {
+            std::cout << vertexIndices[0] << "/" << vertexIndices[1] << "/" << vertexIndices[2] << " ";
+        }
+        std::cout << std::endl;
+    }*/
+
+    std::vector<glm::vec3> vertexArray = setupVertexArray(vertices, faces);
 
     renderer = SDL_CreateRenderer(
-        window,
-        -1,
-        SDL_RENDERER_ACCELERATED
+            window,
+            -1,
+            SDL_RENDERER_ACCELERATED
     );
-
-    SDL_RenderSetLogicalSize(renderer, 400, 400);
 
     bool running = true;
     SDL_Event event;
 
-    std::vector<glm::vec3> vertices;
-    std::vector<Face> faces;
-    if (!loadOBJ("/Users/jime/Downloads/navejime.obj", vertices, faces)) {
-        std::cerr << "Failed to load model" << std::endl;
-        return 1;
-    }
+    std::vector<glm::vec3> vertexBufferObject = {
+            {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+            {-0.87f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f},
+            {0.87f,  -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f},
 
-    std::cout << "Loaded " << vertices.size() << " vertices and " << faces.size() << " faces." << std::endl;
-
-    for (int i = 0; i < vertices.size(); i++) {
-        std::cout << "v " << vertices[i].x << " " << vertices[i].y << " " << vertices[i].z << std::endl;
-    }
-
-    for (int i = 0; i < faces.size(); i++) {
-        std::cout << "f " << faces[i].vertexIndices[0] << " " << faces[i].vertexIndices[1] << " " << faces[i].vertexIndices[2] << std::endl;
-    }
-
-    const std::vector<glm::vec3> &modelVertices = setupVertexArray(vertices, faces);
-
+            {0.0f, 1.0f,    -1.0f}, {1.0f, 1.0f, 0.0f},
+            {-0.87f, -0.5f, -1.0f}, {0.0f, 1.0f, 1.0f},
+            {0.87f,  -0.5f, -1.0f}, {1.0f, 0.0f, 1.0f}
+    };
 
     while (running) {
-        float angle = 0.0f;  // Mueve esta declaración fuera del bucle para que persista entre frames
-        angle += 0.01f;
-
-        uniform.model = glm::rotate(createModelMatrix(), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-        uniform.model = glm::translate(uniform.model, glm::vec3(0.0f, 0.0f, 0.0f));  // Ajusta estos valores según lo necesario
-
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
@@ -253,10 +333,11 @@ int main() {
 
         clear();
 
-
         // Call our render function
-        render(modelVertices);
+        render(vertexArray);
         // point(10, 10, Color{255, 255, 255});
+
+
 
 
         // Present the frame buffer to the screen
