@@ -4,7 +4,7 @@
 #include "glm/glm.hpp"
 #include "fragment.h"
 
-glm::vec3 light = normalize(glm::vec3(0.5, 0.5, 3));
+glm::vec3 light = normalize(glm::vec3(0.5, 2, 2));
 
 
 glm::vec3 barycentricCoordinates(const glm::vec3& P, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C) {
@@ -31,6 +31,11 @@ std::vector<Fragment> triangle(Vertex a, Vertex b, Vertex c) {
     float minY = std::min(std::min(A.y, B.y), C.y);
     float maxX = std::max(std::max(A.x, B.x), C.x);
     float maxY = std::max(std::max(A.y, B.y), C.y);
+    //castear a int
+    minX = std::floor(minX);
+    minY = std::floor(minY);
+    maxX = std::ceil(maxX);
+    maxY = std::ceil(maxY);
     glm::vec3 N = glm::normalize(glm::cross(B - A, C - A));
 
     for (float y = minY; y <= maxY; y++) {
