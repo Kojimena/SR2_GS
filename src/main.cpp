@@ -29,6 +29,8 @@ void writeBMP(const std::string& filename) {
     int width = WINDOW_WIDTH;
     int height = WINDOW_HEIGHT;
 
+    std::string fileopen = "./" + filename;
+
     float zMin = std::numeric_limits<float>::max();
     float zMax = std::numeric_limits<float>::lowest();
 
@@ -51,9 +53,9 @@ void writeBMP(const std::string& filename) {
 
 
     // Abre el archivo en modo binario
-    std::ofstream file(filename, std::ios::binary);
+    std::ofstream file(fileopen, std::ios::binary);
     if (!file) {
-        std::cerr << "No se pudo abrir el archivo para escribir: " << filename << "\n";
+        std::cerr << "No se pudo abrir el archivo para escribir: " << fileopen << "\n";
         return;
     }
 
