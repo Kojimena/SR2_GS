@@ -5,10 +5,9 @@ Proyecto de gráficos basado en la biblioteca SDL2, y escrito utilizando las fun
 ![Demo](https://media.giphy.com/media/zs1nMIuxudF94lGJPl/giphy.gif)
 
 ## Renderizado BMP 
+<img width="680" alt="Captura de pantalla 2023-08-31 a la(s) 21 52 20" src="https://github.com/Kojimena/SR2_GS/assets/77686378/04a1293c-e71f-42b9-9255-b268c1eb8d2e">
+<img width="447" alt="Captura de pantalla 2023-08-31 a la(s) 21 53 50" src="https://github.com/Kojimena/SR2_GS/assets/77686378/b38668ef-f13f-44f4-8ea7-e4c3855b6feb">
 
-<img width="409" alt="Captura de pantalla 2023-08-18 a la(s) 17 56 07" src="https://github.com/Kojimena/SR2_GS/assets/77686378/7bdbca00-ec8b-417f-98ae-2099a395c4fe">
-<img width="409" alt="Captura de pantalla 2023-08-18 a la(s) 18 03 52" src="https://github.com/Kojimena/SR2_GS/assets/77686378/8912fe0c-83ca-4c43-b325-6f301e8fa0a8">
-<img width="433" alt="Captura de pantalla 2023-08-18 a la(s) 18 04 32" src="https://github.com/Kojimena/SR2_GS/assets/77686378/39d112de-c40d-4759-9723-ec9ff94dea60">
 
 ## Requisitos
 
